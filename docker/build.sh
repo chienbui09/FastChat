@@ -13,7 +13,7 @@ fi
 docker buildx use multiplatform-builder
 
 build_serve() {
-  local image="${REGISTRY}/fastchat-server:${TAG}"
+  local image="${REGISTRY}/fastchat/server:${TAG}"
   echo "Building and pushing ${image} (linux/amd64, linux/arm64)..."
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
@@ -25,7 +25,7 @@ build_serve() {
 }
 
 build_worker() {
-  local image="${REGISTRY}/fastchat-model-worker:${TAG}"
+  local image="${REGISTRY}/fastchat/model-worker:${TAG}"
   echo "Building and pushing ${image} (linux/amd64)..."
   docker buildx build \
     --platform linux/amd64 \
