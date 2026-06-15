@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: huggingface-cache
+  namespace: fastchat
+spec:
+  # ReadWriteMany lets all worker pods share one model cache,
+  # so weights are downloaded once. Requires an RWX-capable StorageClass
+  # (e.g. NFS, EFS, Longhorn). Change to ReadWriteOnce for single-node clusters.
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi

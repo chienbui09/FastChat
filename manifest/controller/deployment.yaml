@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastchat-controller
+  namespace: fastchat
+spec:
+  # Single replica only — workers register their address here;
+  # multiple replicas would each hold a different worker registry.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastchat-controller
+  template:
+    metadata:
+      labels:
+        app: fastchat-controller
+    spec:
+      containers:
+        - name: controller
+          image: ghcr.io/chienbui09/fastchat:latest
+          command: ["python3.10", "-m", "fastchat.serve.controller"]
+          args:
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "21001"
+          ports:
+            - containerPort: 21001
+          readinessProbe:
+            httpGet:
+              path: /list_models
+              port: 21001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /list_models
+              port: 21001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastchat-api-server
+  namespace: fastchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastchat-api-server
+  template:
+    metadata:
+      labels:
+        app: fastchat-api-server
+    spec:
+      containers:
+        - name: api-server
+          image: ghcr.io/chienbui09/fastchat:latest
+          command: ["python3.10", "-m", "fastchat.serve.openai_api_server"]
+          args:
+            - "--controller-address"
+            - "$(CONTROLLER_ADDRESS)"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8000"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: CONTROLLER_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: fastchat-config
+                  key: CONTROLLER_ADDRESS
+          readinessProbe:
+            httpGet:
+              path: /v1/models
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v1/models
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"

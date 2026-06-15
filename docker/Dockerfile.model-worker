@@ -1,0 +1,7 @@
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+
+RUN apt-get update -y && apt-get install -y python3.10 python3.10-distutils curl && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+
+RUN pip3 install --no-cache-dir --timeout 3600 "fschat[model_worker]"

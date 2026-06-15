@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastchat-model-worker
+  namespace: fastchat
+spec:
+  # Headless — gives each StatefulSet pod a stable DNS entry
+  # (fastchat-model-worker-<N>.fastchat-model-worker.fastchat.svc.cluster.local).
+  clusterIP: None
+  selector:
+    app: fastchat-model-worker
+  ports:
+    - port: 21002
+      targetPort: 21002

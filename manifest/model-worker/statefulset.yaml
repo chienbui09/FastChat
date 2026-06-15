@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fastchat-model-worker
+  namespace: fastchat
+spec:
+  # Scale this to run multiple GPU workers. Each pod registers its own
+  # Pod IP with the controller so the controller can load-balance across them.
+  replicas: 1
+  serviceName: fastchat-model-worker
+  selector:
+    matchLabels:
+      app: fastchat-model-worker
+  template:
+    metadata:
+      labels:
+        app: fastchat-model-worker
+    spec:
+      containers:
+        - name: model-worker
+          image: ghcr.io/chienbui09/fastchat:latest
+          command: ["python3.10", "-m", "fastchat.serve.model_worker"]
+          args:
+            - "--model-names"
+            - "$(WORKER_MODEL_NAMES)"
+            - "--model-path"
+            - "$(WORKER_MODEL_PATH)"
+            # Each pod advertises its own Pod IP so the controller tracks
+            # individual workers rather than routing through a shared VIP.
+            - "--worker-address"
+            - "http://$(MY_POD_IP):21002"
+            - "--controller-address"
+            - "$(CONTROLLER_ADDRESS)"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "21002"
+          ports:
+            - containerPort: 21002
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CONTROLLER_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: fastchat-config
+                  key: CONTROLLER_ADDRESS
+            - name: WORKER_MODEL_NAMES
+              valueFrom:
+                configMapKeyRef:
+                  name: fastchat-config
+                  key: WORKER_MODEL_NAMES
+            - name: WORKER_MODEL_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: fastchat-config
+                  key: WORKER_MODEL_PATH
+          volumeMounts:
+            - name: huggingface-cache
+              mountPath: /root/.cache/huggingface
+          resources:
+            requests:
+              cpu: "2"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: "32Gi"
+              nvidia.com/gpu: "1"
+          readinessProbe:
+            httpGet:
+              path: /worker_get_status
+              port: 21002
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /worker_get_status
+              port: 21002
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: huggingface-cache
+          persistentVolumeClaim:
+            claimName: huggingface-cache

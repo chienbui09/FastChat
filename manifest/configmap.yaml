@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fastchat-config
+  namespace: fastchat
+data:
+  CONTROLLER_ADDRESS: "http://fastchat-controller:21001"
+  WORKER_MODEL_NAMES: "vicuna-7b-v1.5"
+  WORKER_MODEL_PATH: "lmsys/vicuna-7b-v1.5"
